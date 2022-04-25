@@ -1,157 +1,171 @@
-# Deeper dive into functions
+# The DOM & Type Casting
 
-TypeScript recognizes also if something is a function:
+first of all change `sandbox.ts` to `app.ts` (also do it in `index.html`)
 
+let's get an `a` tag from the DOM
 ```
-let greet = () => {
-    console.log('Hello world')
-}
+const anchor = document.querySelector('a')
 
-//greet = 'Hello' // This will not work
-```
-
-You can define a function type variable:
-```
-let say_hi: Function;
-say_hi = () => {
-    console.log('Hello!')
-}
+console.log(anchor.href)
 ```
 
-We already know how to add types to a function parameters, but here is how to make an optional parameter:
-```
-let add = (a: number, b: number ,c?:number|string) => {
-    console.log(a + b)
-    console.log(c)
-}
-add(10,5) // This will work, but we are not giving c
-```
+if we do this, TS wont compile the code, because it doe's not know if the element exists in the DOM or not, so it says that the value may be null, therefor it can't compile.
 
-we can also add a default value, if we don't pass something.  
-`c` will still stay optional, but now it has a default value of 10.
-```
-let multiply = (a: number, b: number ,c:number|string = 10) => {
-    console.log(a * b)
-    console.log(c)
-}
-add(10,5)
-```
-
-Ofcourse you can return items from the function, but you also can specify what a functions should return:
-
-here we declare that we want tu return a number.
-```
-const minus = (a: number, b: number): number => {
-    return a - b
-}
-
-let result = minus(10,5)
-```
-
-also, it can return different types of items:
-```
-const minus = (a: number, b: number): number|string => {
-    if (a - b == 5){
-        return a - b
-    } else {
-        return "Hello"        
+there are a few ways to handle it:
+-   Wrap it with an if
+    ```
+    // first way to fix:
+    if (anchor) {
+        console.log(anchor.href)
     }
-}
+    ```
+- Tell typescript as a developer, that there is a value for sure, by adding `!`, it means, that you are telling TS that you are sure that there is a value coming from the tag.
+    ```
+    // second way to fix:
+    const anchor2 = document.querySelector('a')!
+    console.log(anchor2)
+    ```
 
-let result = minus(10, 5)
-let result2 = minus(20,5)
-```
+also, as you can see, when you do that, TS will recognize it as an anchor tag, and will provide you with some extensions for that.
 
-if we want expicitly to specify that a functions retuns void, we can do it like so:
-
-```
-const sayHello = (name: string): void => {
-    console.log(`Hello ${name}`)
-}
-```
-- **Aliases**  
-
-A problem with working like this, is what if we want some functions contains same inputs, for example, if we have:
-```
-const func1 = (name: string, age: number, state: string | number, item: string | number) => {
-    console.log(name,age,state,item)
-}
-
-const func2 = (name: string, age: number, state: string | number, item: string | number) => {
-    console.log(name,age,state,item)
-}
-
-const func3 = (name: string, age: number, state: string | number, item: string | number) => {
-    console.log(name,age,state,item)
-}
-const func4 = (name: string, age: number, state: string | number, item: string | number) => {
-    console.log(name,age,state,item)
-}
-```
-we are repeadely using `string|number` in these functions, so we are just repeating the code.
-the solution for this is `Aliases`, we can declare our own `type`, like so:
+this will work when you are using it with a tag.
+but when you want to do it with a class name, for example if we take the form:
 
 ```
-type StrOrNum = string | number;
+// form with class
+const form = document.querySelector('.new-item-form')!
+console.log(form)
+```
+This will find the form by class, but it will recognize it as a `Element` not as `FormElement`.
 
-const func1 = (name: string, age: number, state: StrOrNum, item: StrOrNum) => {
-    console.log(name,age,state,item)
-}
+in order to fix it, we can use `as` syntax.
 
-const func2 = (name: string, age: number, state: StrOrNum, item: StrOrNum) => {
-    console.log(name,age,state,item)
-}
-
-const func3 = (name: string, age: number, state: StrOrNum, item: StrOrNum) => {
-    console.log(name,age,state,item)
-}
-const func4 = (name: string, age: number, state: StrOrNum, item: StrOrNum) => {
-    console.log(name,age,state,item)
+```
+// form with class as form
+const form2 = document.querySelector('.new-item-form') as HTMLFormElement
+console.log(form)
+```
+We can also do the same with the children of the form:
+```
+// form children
+const type = document.querySelector('#type') as HTMLSelectElement
+const tofrom = document.querySelector('#tofrom') as HTMLInputElement
+const details = document.querySelector('#details') as HTMLInputElement
+const amount = document.querySelector('#amount') as HTMLInputElement
 ```
 
-Like this we already have less code.
-
-Same thing can be done with objects:
+Using the same way, we can add event listeners:
 ```
-type PersonObj = { name: string, age: number, state: StrOrNum }
+// form with class as form
+const form2 = document.querySelector...
 
-const func5 = (person: PersonObj):void => {
-    console.log(person.name)
-}
+// form children
+...
 
-const func6 = (person: PersonObj):void => {
-    console.log(person.age)
-}
-
-const func7 = (person: PersonObj):void => {
-    console.log(person.state)
-}
+//
+form2.addEventListener('submit', (e: Event) => {
+    e.preventDefault();
+    console.log(
+        type.value,
+        tofrom.value,
+        details.value,
+        amount.value,
+    )
+})
 ```
+The above code will print the children values after the form is submited because we added an event listener which takes `Event` type parameters as a value, `Event` is built in in TS.
 
-- **Function Signatures**
+## **Classes**
 
-Function signatures allow you to create something like an interface for functions, **you can change the parameter names inside them**, but the types of parameters **must** stay the same.
+Classes are pretty much the same as in JS, with types decleration.
 ```
-let talk: (a: string, b: string) => void;
+// Classes
+class Invoice {
+    client: string;
+    details: string;
+    amount: number;
 
-talk = (name: string, says: string) => {
-    console.log(`${name} says ${says}`)
-}
+    constructor(
+        client:string,details:string,amount:number) {
+        this.client = client;
+        this.details = details;
+        this.amount = amount;
+    }
 
-talk('Bugz','Hello!')
-```
-
-- Signature that retuns something: (return is a must ofcourse of the correct type), that's why we return 0 on `else`.
-```
-// example 2
-let calc: (a: number, b: number, c: string) => number;
-
-calc = (numOne: number, numTwo: number, operation: string) => {
-    if (operation == 'add') {
-        return numOne + numTwo
-    } else {
-        return 0
+    // random method
+    format() {
+        return `${this.client} owes $${this.amount} for ${this.details}`
     }
 }
 ```
-- Note, that the same thing is works SAME with objects, they everything must match.
+
+And you can create arrays of the type of the class you created.
+```
+// Creating invoices
+const inv = new Invoice('Mario', 'Work on Mario website', 200)
+const invTwo = new Invoice('Luigi', 'Work on Luigi website', 200)
+const invThree = new Invoice('Tom', 'Work on Tom website', 200)
+
+// Declaring an array of type invoice
+let invoices: Invoice[] = [];
+invoices.push(inv);
+invoices.push(invTwo);
+```
+
+- **Public, Private & Readonly**
+
+You can define the type of the property of a class by using private / public / readonly.
+
+By default they are all public.
+
+- **private:**  
+    - You can't access this property outside of the class, you can still change the value withing the class.
+
+- **readonly:**
+    - Readonly allows you to read the data from outside the class, but you can't change it anywhere, not from inside the class also, it's just getting its value and that's it.
+
+```
+class Invoice {
+    readonly client: string;
+    private details: string;
+    public amount: number;
+```
+
+Shorthand for creating a class:
+instead of this:
+```
+class Invoice {
+    client: string;
+    details: string;
+    amount: number;
+
+    constructor(
+        client:string,details:string,amount:number) {
+        this.client = client;
+        this.details = details;
+        this.amount = amount;
+    }
+
+    // random method
+    format() {
+        return `${this.client} owes $${this.amount} for ${this.details}`
+    }
+}
+```
+you can use:
+```
+class Invoice {
+    constructor(
+        readonly client: string,
+        private details: string,
+        public amount: number
+    ){}
+
+    // random method
+    format() {
+        return `${this.client} owes $${this.amount} for ${this.details}`
+    }
+}
+```
+
+this will work only if u use the modifiers before the properties.
