@@ -1,93 +1,114 @@
-# Modules
+# Generics
 
-We are able to use different types of modules importing ways, for example we can use in here the ES6 type.
+A Generic is a function that you can add to any objects, for example, the following code will take an object (Any type) and append a UID for it.
 
-1. open tsconfig.json
-2. change `"module": "commonjs"` to `"module": "es2015"`
-3. change `"target": "es2016"` to `"target": "es6"`
-4. open the `index.html`
-5. change `<script src='app.js'></script>` to `<script type="module" src='app.js'></script>`
-6. now you can use the module system.
-
-**Let's use it!**
-
-- create `src>classes>invoice.ts`
 ```
-export class Invoice {
-
-    constructor(
-        readonly client: string,
-        private details: string,
-        public amount: number
-    ){}
-
-    // random method
-    format() {
-        return `${this.client} owes $${this.amount} for ${this.details}`
-    }
-}
-```
-Note that we added `export` keyword, so we are able to export the class outside.
-
-now to import it, it's **IMPORTANT** to use `.js` in the end of the file, because we will be using `Invoice.js` in the app browser, not `Invoice.ts`
-
-- `app.ts`
-    ```
-    import {Invoice} from './classes/invoice.js'
-    ```
-
-This will work, and the code will run, BUT the problem with it, is that it does not bundle everything into one package, meaning the browser will load a few JS files, instead of one, which is bad, but can be fixed with webpack.
-
-----
-# Interfaces
-
-Cool enough, unlike JS, TypeScript has Interfaces!  
-`interface` will look like this with its implementation:
-```
-interface isPerson {
-    name: string;
-    age: number;
-    speak(a: string): void;
-    spend(b:number): number;
+const addUID = (obj: object) => {
+    let uid = Math.floor(Math.random() * 100);
+    return {...obj, uid}
 }
 
-const me: isPerson = {
-    name: "Slava",
-    age: 27,
-    speak(text: string): void{
-        console.log(text)
-    },
-    spend(amount: number): number{
-        return amount;
-    }
+let item = addUID({ name: 'Slava', age: 10 });
+// console.log(item.name) // Wont work
+
+```
+this will work, but you can't access the properties of the object, because typescript does not know what type of object that is, and what it has.
+
+to fix it, we can add `<T>`
+```
+const addUID = <T>(obj: T) => {
+    let uid = Math.floor(Math.random() * 100);
+    return { ...obj, uid };
+}
+
+let item = addUID({ name: 'Slava', age: 10 });
+console.log(item.name) // Will work
+```
+
+This way, typescript will catch the type of the object that is transfered to the function.
+
+The problem with this, is that when we do this, we can send anything to the function, so:
+```
+let item2 = addUID('Slava');
+console.log(item2)
+```
+will work.
+
+In this case, we need to extend the `<T>`
+
+```
+const addUID = <T extends {name:string, age:number}>(obj: T) => {
+    let uid = Math.floor(Math.random() * 100);
+    return { ...obj, uid };
+}
+
+// let item2 = addUID('Slava'); // Now this won't work
+// console.log(item2)
+```
+
+- Generics & Interfaces
+
+Let's assume we want to put an interface, in which one of the fields should be Generic.
+For example here:
+```
+interface Resource {
+    uid: number;
+    resourceName: string;
+    data: ...;
 }
 ```
+we want the `data` field to be string, or int, or object, it should be able to hold anything.
 
-you can implement interfaces into classes by using `implements`, for example:
-
-`src/interfaces/HasFormatter.ts`:
+in this case, we are using Generics in the interface, by adding `<T>` again.
 ```
-export interface HasFormatter {
-    format(): string;
+interface Resource<T>{
+    uid: number;
+    resourceName: string;
+    data: T;
+}
+
+const item3: Resource<number> = {
+    uid: 10,
+    resourceName: 'Home',
+    data: 5
+}
+
+const item4: Resource<string> = {
+    uid: 10,
+    resourceName: 'Home',
+    data: 'Some data'
 }
 ```
+Like so we allow the object to be created with different types in the `data`
 
-class:
+
+# Enums
+
+You can create and access Enums in TypeScript like so:
 ```
-import { HasFormatter } from "../interfaces/HasFormatter"
-export class Invoice implements HasFormatter{
+/* Enums */
+enum ResourceType { BOOK, AUTHOR, FILM, DIRECTOR, PERSON }
 
-    constructor(
-        readonly client: string,
-        private details: string,
-        public amount: number
-    ){}
+interface Item {
+    price: number,
+    type: ResourceType
+}
 
-    // random method
-    format() {
-        return `${this.client} owes $${this.amount} for ${this.details}`
-    }
+const newItem: Item = {
+    price: 20,
+    type: ResourceType.PERSON
 }
 ```
+You if will log the type, it will show a number, because Enums are initially getting associated with the Index in the Array, so 
+`Book` will be shown as `0`, and `Film` as `2`.
 
-This will force the class to implement the things from the interface.
+# Tuples
+
+The way to define a tuple is to define an array, but to predefine the types that will enter to the array.
+
+like so:
+```
+/* Tuple */
+let tuple: [string, number, boolean] = ["Hello", 10, true];
+```
+You can change the values inside, but you can't change the types.
